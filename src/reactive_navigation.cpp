@@ -112,11 +112,14 @@ private:
                             // Calculate final angular velocity input
                             angular_input = integral + proportional;
 
-                            if(angular_input > 1.3){
-                            	angular_input = 1.3;
+                            // Calculating maximum possibl angular velocity request given desired linear velocity 
+                            float angular_max = (2*desired_linear_velocity-2*0.016*0.075)/0.094;
+
+                            if(angular_input > angular_max){
+                            	angular_input = angular_max;
                             }
-                            if(angular_input < -1.3){
-                            	angular_input = -1.3;
+                            if(angular_input < -angular_max){
+                            	angular_input = -angular_max;
                             }
                             ROS_INFO("ANG ERROR: %f", error);
                             // Write velocities for the next time step
@@ -168,12 +171,14 @@ private:
 
                             ROS_INFO("ANG ERROR: %f", error);
 
-                            // Write velocities for the next time step
-                            if(angular_input > 1.3){
-                            	angular_input = 1.3;
+                            // Calculating maximum possibl angular velocity request given desired linear velocity 
+                            float angular_max = (2*desired_linear_velocity-2*0.016*0.075)/0.094;
+
+                            if(angular_input > angular_max){
+                            	angular_input = angular_max;
                             }
-                            if(angular_input < -1.3){
-                            	angular_input = -1.3;
+                            if(angular_input < -angular_max){
+                            	angular_input = -angular_max;
                             }
 
                             msg.angular.z = -angular_input;
@@ -217,7 +222,10 @@ private:
     }
     void ir_front_Callback(const sensor_msgs::Range::ConstPtr& ir_msg)
     {
-
+    	float sensor_val_front = static_cast<float>(msg->data);
+        if(sensor_val_front < 0.15){
+            ROS_WARN("Collision risk! The robot is %f meters of an obsctacle, on the front side", sensor_val_front);
+        }
         front_obstacle_distance = ir_msg->range;
         front_ir_flag = true;
 

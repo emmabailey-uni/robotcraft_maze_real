@@ -167,10 +167,10 @@ private:
     void frontCallback(const std_msgs::Float32::ConstPtr& msg){
         sensor_msgs::Range ir_front;
 
-        float sensor_val_front = static_cast<float>(msg->data);
+        /*float sensor_val_front = static_cast<float>(msg->data);
         if(sensor_val_front < 0.15){
             ROS_WARN("Collision risk! The robot is %f meters of an obsctacle, on the front side", sensor_val_front);
-        }
+        }*/
 
         ir_front.header.frame_id = "base_link";
         ir_front.radiation_type = 1;
