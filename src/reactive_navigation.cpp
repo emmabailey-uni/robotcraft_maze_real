@@ -24,6 +24,7 @@
 class ReactiveController
 {
 private:
+
     ros::NodeHandle n;
     ros::Publisher cmd_vel_pub;
 
@@ -72,14 +73,14 @@ private:
         if(!init_flag){
         	// INIT
         	swtich_case = 0;
-        } else if (front_obstacle_distance > front_obstacle_distance_threshold){
+        } else if (front_obstacle_distance <= front_obstacle_distance_threshold){
         	// PID
-        	swtich_case = 1;
+        	swtich_case = 2;
         } else{
         	// MANUEVER
-        	swtich_case = 2;
+        	swtich_case = 1;
         }
-        
+
         if(desired_wall == 1.0){
             switch(swtich_case) {
 
@@ -89,14 +90,19 @@ private:
                             }else if(front_obstacle_distance > front_obstacle_distance_threshold){
                                 msg.linear.x = desired_linear_velocity;
                             } else {
+                            	msg.linear.x = 0.0;
                                 init_flag = true;
                             }
+                            msg.angular.z = 0.0;
                             break;       // and exits the switch
-          
+
             case 1 :        // PI controller
 
                             // Calculate proportional part
                             error = desired_side_wall_distance - right_obstacle_distance;
+                            if(abs(error) < 0.02){
+                                error = 0;
+                            }
                             proportional =  error*k_p;
 
                             // Calculate integral part
@@ -106,18 +112,24 @@ private:
                             // Calculate final angular velocity input
                             angular_input = integral + proportional;
 
+                            if(angular_input > 1.3){
+                            	angular_input = 1.3;
+                            }
+                            if(angular_input < -1.3){
+                            	angular_input = -1.3;
+                            }
+                            ROS_INFO("ANG ERROR: %f", error);
                             // Write velocities for the next time step
                             msg.angular.z = angular_input;
-
                             msg.linear.x = desired_linear_velocity;
-                            
+
                             ROS_INFO("Case PID");
                             break;
 
             case 2 :        // Avoidance manuever
                             msg.linear.x = 0.001;
-                            msg.angular.z = 1.5;
-                            
+                            msg.angular.z = 0.7;
+
                             error = 0;
                             integral_error = 0;
 
@@ -125,7 +137,8 @@ private:
                             break;
             }
 
-        }else{
+        }
+        else{
             switch(swtich_case) {
 
             case 0 :        // Initialisation
@@ -135,9 +148,11 @@ private:
                                 msg.linear.x = desired_linear_velocity;
                             } else {
                                 init_flag = true;
+                                msg.linear.x = 0.0;
                             }
+                            msg.angular.z = 0.0;
                             break;       // and exits the switch
-          
+
             case 1 :        // PI controller
 
                             // Calculate proportional part
@@ -151,18 +166,28 @@ private:
                             // Calculate final angular velocity input
                             angular_input = integral + proportional;
 
+                            ROS_INFO("ANG ERROR: %f", error);
+
                             // Write velocities for the next time step
+                            if(angular_input > 1.3){
+                            	angular_input = 1.3;
+                            }
+                            if(angular_input < -1.3){
+                            	angular_input = -1.3;
+                            }
+
                             msg.angular.z = -angular_input;
 
                             msg.linear.x = desired_linear_velocity;
-                            
+
                             ROS_INFO("Case PID");
+
                             break;
 
             case 2 :        // Avoidance manuever
                             msg.linear.x = 0.001;
-                            msg.angular.z = -1.5;
-                            
+                            msg.angular.z = -0.7;
+
                             error = 0;
                             integral_error = 0;
 
@@ -176,26 +201,26 @@ private:
         return msg;
 
     }
-    
+
 
     void ir_right_Callback(const sensor_msgs::Range::ConstPtr& ir_msg)
     {
 
         right_obstacle_distance = ir_msg->range;
-        
+
     }
     void ir_left_Callback(const sensor_msgs::Range::ConstPtr& ir_msg)
     {
 
         left_obstacle_distance = ir_msg->range;
-        
+
     }
     void ir_front_Callback(const sensor_msgs::Range::ConstPtr& ir_msg)
     {
 
         front_obstacle_distance = ir_msg->range;
         front_ir_flag = true;
-        
+
     }
 
 
@@ -227,12 +252,13 @@ public:
         // Send messages in a loop
         ros::Rate loop_rate(10);
         while (ros::ok())
-        {	 
-            auto msg = calculateCommand();
+        {
+            if(front_ir_flag){
+              auto msg = calculateCommand();
+              // Publish the new command
+              this->cmd_vel_pub.publish(msg);
 
-            // Publish the new command
-            this->cmd_vel_pub.publish(msg);
-
+            }
             ros::spinOnce();
 
             // And throttle the loop

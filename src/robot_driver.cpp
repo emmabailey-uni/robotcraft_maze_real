@@ -46,9 +46,7 @@ private:
 
     double v;
     double w;
-
-    int endX, endY;
-    int startX, startY;
+    float initial_x, initial_y, initial_theta;
 
 
     //Publisher Topics
@@ -66,10 +64,9 @@ private:
     ros::Subscriber front_dist_sub;
     ros::Subscriber pose_sub;
     ros::Subscriber reactive_vel_sub;
-    ros::Subscriber map_sub;
 
     //Service client
-    ros::ServiceClient buzzer_client;
+    //ros::ServiceClient buzzer_client;
 
 
     double front_obstacle_distance;
@@ -83,8 +80,6 @@ private:
 
     //Callback functions for subscribers
     void poseCallback(const geometry_msgs::Pose2D& pose_msg){
-      //  relay <pose_sub> [odom_pub];
-
         current_time = ros::Time::now();
 
         //since all odometry is 6DOF we'll need a quaternion created from yaw
@@ -127,12 +122,11 @@ private:
 
     }
 
-    void leftCallback( const sensor_msgs::LaserScan::ConstPtr& msg){
+    void leftCallback( const std_msgs::Float32::ConstPtr& msg){
         sensor_msgs::Range ir_left;
-        //relay <left_dist_sub> [ir_left_sensor]
 
         //.data is for acces to all the data from the msg
-        float sensor_val_left = msg->ranges[0];
+        float sensor_val_left = static_cast<float>(msg->data);
         if(sensor_val_left < 0.15){
             ROS_WARN("Collision risk! The robot is %f meters of an obsctacle, on the left side", sensor_val_left);
         }
@@ -151,11 +145,10 @@ private:
 
     }
 
-    void rightCallback(const sensor_msgs::LaserScan::ConstPtr& msg){
+    void rightCallback(const std_msgs::Float32::ConstPtr& msg){
         sensor_msgs::Range ir_right;
-        //relay <right_dist_sub> [ir_right_sensor]
 
-        float sensor_val_right = msg->ranges[0];
+        float sensor_val_right = static_cast<float>(msg->data);
         if(sensor_val_right < 0.15){
             ROS_WARN("Collision risk! The robot is %f meters of an obsctacle, on the right side", sensor_val_right);
         }
@@ -171,11 +164,10 @@ private:
         ir_right_sensor.publish(ir_right);
     }
 
-    void frontCallback(const sensor_msgs::LaserScan::ConstPtr& msg){
+    void frontCallback(const std_msgs::Float32::ConstPtr& msg){
         sensor_msgs::Range ir_front;
-        //relay <front_dist_sub> [ir_front_sensor]
 
-        float sensor_val_front = msg->ranges[0];
+        float sensor_val_front = static_cast<float>(msg->data);
         if(sensor_val_front < 0.15){
             ROS_WARN("Collision risk! The robot is %f meters of an obsctacle, on the front side", sensor_val_front);
         }
@@ -210,9 +202,9 @@ private:
     geometry_msgs::Pose2D setPose(){
         auto pose_MSG = geometry_msgs::Pose2D();
         // Set position to zero
-        pose_MSG.x = 4.0;
-        pose_MSG.y = 4.0;
-        pose_MSG.theta = 0.0;
+        pose_MSG.x = initial_x;
+        pose_MSG.y = initial_y;
+        pose_MSG.theta = initial_theta;
         return pose_MSG;
     }
 
@@ -224,20 +216,17 @@ private:
         return rgb_MSG;
     }
 
-    // NEED HELP WITH STRING IN C++
-
-    void switchBuzzerState(std::string c){
+    /*void switchBuzzerState(std::string c){
         // Set led to "0" or "1" by char c
         rosserial_arduino::Test Buzzer_ctr;
         Buzzer_ctr.request.input = c;
 
-        //NOT SURE IF THIS IS THE CORRECT WAY TO ACCESS CLIENT
         if(this->buzzer_client.call(Buzzer_ctr)){
             ROS_INFO_STREAM(Buzzer_ctr.response.output);
         }else{
             ROS_ERROR("Failed to call service ");
         }
-    }
+    }*/
 
 
 public:
@@ -245,27 +234,26 @@ public:
     RobotDriver(){
         // Initialize ROS
         this->n = ros::NodeHandle();
+
+        this->n.getParam("/initial_x", initial_x);
+        this->n.getParam("/initial_y", initial_y);
+        this->n.getParam("/initial_theta", initial_theta);
+
         // Create a publisher object, able to push messages
         this->cmd_vel_pub = this->n.advertise<geometry_msgs::Twist>("cmd_vel", 10);
-        //this->odom_pub = this->n.advertise<nav_msgs::Odometry>("odom", 10);
-        //this->set_pose_pub = this->n.advertise<geometry_msgs::Pose2D>("set_pose", 10);
+        this->odom_pub = this->n.advertise<nav_msgs::Odometry>("odom", 10);
+        this->set_pose_pub = this->n.advertise<geometry_msgs::Pose2D>("set_pose", 10);
         this->ir_front_sensor = this->n.advertise<sensor_msgs::Range>("ir_front_sensor", 10);
         this->ir_left_sensor = this->n.advertise<sensor_msgs::Range>("ir_left_sensor", 10);
         this->ir_right_sensor = this->n.advertise<sensor_msgs::Range>("ir_right_sensor", 10);
 
         // Create a subscriber for laser scans
-        //this->pose_sub = n.subscribe("pose", 10, &RobotDriver::poseCallback, this);
-        this->left_dist_sub = n.subscribe("base_scan_2", 10, &RobotDriver::leftCallback, this);
-        this->right_dist_sub = n.subscribe("base_scan_3", 10, &RobotDriver::rightCallback, this);
-        this->front_dist_sub = n.subscribe("base_scan_1", 10, &RobotDriver::frontCallback, this);
+        this->pose_sub = n.subscribe("pose", 10, &RobotDriver::poseCallback, this);
+        this->left_dist_sub = n.subscribe("left_distance", 10, &RobotDriver::leftCallback, this);
+        this->right_dist_sub = n.subscribe("right_distance", 10, &RobotDriver::rightCallback, this);
+        this->front_dist_sub = n.subscribe("front_distance", 10, &RobotDriver::frontCallback, this);
         this->reactive_vel_sub = n.subscribe("reactive_vel", 10, &RobotDriver::reactiveVelCallback, this);
-        //this->map_sub = n.subscribe("map_2",10,&RobotDriver::mapCallback,this);
 
-
-        this->n.getParam("/startX", startX);
-        this->n.getParam("/startY", startY);
-        this->n.getParam("/endX", endX);
-        this->n.getParam("/endY", endY);
 
     }
 
@@ -290,12 +278,11 @@ public:
             // Publish the new command
             this->cmd_vel_pub.publish(vel_MSG);
             //this->rgb_leds_pub.publish(rgb_MSG);
-            //this->set_pose_pub.publish(pose_MSG);
+            this->set_pose_pub.publish(pose_MSG);
 
 
-            std::string on = "1";
-            std::string off = "0";
-
+            //std::string on = "1";
+            //std::string off = "0";
             // Buzz from count 100 to 500
             //switchBuzzerState(on);
 

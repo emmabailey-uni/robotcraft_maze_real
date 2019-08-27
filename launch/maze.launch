@@ -1,23 +1,27 @@
-<!-- maze.launch: launch stage with a maze_solver node -->
+<!-- maze.launch: launch gmapping, reactive navigation and robot driver -->
 
 <launch>
 
-    <node pkg="stage_ros" type="stageros" name="stageros" args="$(find robotcraft_maze)/world/robotcraft_maze.world" />
-    <include file="$(find robotcraft_maze)/launch/gmapping.launch"/>
-    <include file="$(find robotcraft2019_robot_description)/launch/display_robotcraft2019.launch"/>
-    
+    <include file="$(find robotcraft_maze_real)/launch/gmapping.launch"/>
+    <!-- <include file="$(find ydlidar)/launch/lidar.launch"/> -->
+    <include file="$(find robotcraft_maze_real)/launch/robot_firmware.launch"/>
+
     <!-- Don't forget to create and compile your node and add it here -->
+    <node pkg="robotcraft_maze_real" type="robotcraft_maze_real_reactive_nav" name="robotcraft_maze_real_reactive_nav" output="screen"/>
+    <node pkg="robotcraft_maze_real" type="robotcraft_maze_real_driver" name="robotcraft_maze_real_driver" output="screen"/>
 
-    <node pkg="robotcraft_maze" type="robotcraft_maze_reactive_nav" name="robotcraft_maze_reactive_nav" output="screen"/>
-    <node pkg="robotcraft_maze" type="robotcraft_maze_driver" name="robotcraft_maze_driver" output="screen"/>
-
-    <!-- Set desired wall to choose which side to follow: 1.0 is right wall, 0.0 is left wall -->
+    <!-- Set desired wall to choose which side to follow: 1.0 is right wall, 0.0 is left wall -->	  <param name="initial_y" type="double" value="2.1" />
     <param name="desired_wall" type="double" value="0.0" />
-    <param name="desired_linear_velocity" type="double" value="0.075" />
-  	<param name="desired_side_wall_distance" type="double" value="0.41" />
-	<param name="front_obstacle_distance_threshold" type="double" value="0.3" />
-	<param name="k_p" type="double" value="0.5" />
-	<param name="k_i" type="double" value="0.1" />
+    <param name="desired_linear_velocity" type="double" value="0.065" />
+  	<param name="desired_side_wall_distance" type="double" value="0.2" />
+	<param name="front_obstacle_distance_threshold" type="double" value="0.2" />
+	<param name="k_p" type="double" value="7.0" />
+	<param name="k_i" type="double" value="1.0" />
 
-</launch>  
+    <!-- Set initial position of robot in maze -->
+    <param name="initial_x" type="double" value="0.25" />
+	<param name="initial_y" type="double" value="2.1" />
+    <!-- Theta original in pos x direction -->
+    <param name="initial_theta" type="double" value="0.0" />
 
+</launch>
