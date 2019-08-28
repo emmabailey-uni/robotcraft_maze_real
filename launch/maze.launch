@@ -12,11 +12,18 @@
 
     <!-- Set desired wall to choose which side to follow: 1.0 is right wall, 0.0 is left wall -->	  <param name="initial_y" type="double" value="2.1" />
     <param name="desired_wall" type="double" value="0.0" />
-    <param name="desired_linear_velocity" type="double" value="0.065" />
+
+    <param name="lost_distance" type="double" value="0.45" />
   	<param name="desired_side_wall_distance" type="double" value="0.2" />
-	<param name="front_obstacle_distance_threshold" type="double" value="0.2" />
-	<param name="k_p" type="double" value="7.0" />
+	<param name="front_obstacle_distance_threshold" type="double" value="0.25" />
+
+
+	<param name="k_p" type="double" value="15.0" />
 	<param name="k_i" type="double" value="1.0" />
+
+    <param name="max_ang" type="double" value="0.64" />
+    <param name="desired_linear_velocity" type="double" value="0.045" />
+    <param name="desired_angular_velicity" type="double" value="0.18" />
 
     <!-- Set initial position of robot in maze -->
     <param name="initial_x" type="double" value="0.25" />
