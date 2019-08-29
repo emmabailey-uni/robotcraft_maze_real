@@ -92,7 +92,7 @@ private:
                             if(!front_ir_flag){
                                 msg.linear.x = 0.0;
                             }else if(front_obstacle_distance > front_obstacle_distance_threshold){
-                                msg.linear.x = desired_linear_velocity;
+                                msg.linear.x = 0.03;
                             } else {
                             	msg.linear.x = 0.0;
                                 init_flag = true;
@@ -149,7 +149,7 @@ private:
                             if(!front_ir_flag){
                                 msg.linear.x = 0.0;
                             }else if(front_obstacle_distance > front_obstacle_distance_threshold){
-                                msg.linear.x = desired_linear_velocity;
+                                msg.linear.x = 0.03;
                             } else {
                                 init_flag = true;
                                 msg.linear.x = 0.0;
@@ -254,7 +254,7 @@ public:
     void run(){
 
         // Send messages in a loop
-        ros::Rate loop_rate(10);
+        ros::Rate loop_rate(2);
         while (ros::ok())
         {
             if(front_ir_flag){

@@ -74,10 +74,6 @@ private:
     double left_obstacle_distance;
 
 
-    geometry_msgs::Twist calculateCommand(){
-        auto msg = geometry_msgs::Twist();
-    }
-
     //Callback functions for subscribers
     void poseCallback(const geometry_msgs::Pose2D& pose_msg){
         current_time = ros::Time::now();
@@ -168,9 +164,9 @@ private:
         sensor_msgs::Range ir_front;
 
         float sensor_val_front = static_cast<float>(msg->data);
-        if(sensor_val_front < 0.15){
+        /*if(sensor_val_front < 0.15){
             ROS_WARN("Collision risk! The robot is %f meters of an obsctacle, on the front side", sensor_val_front);
-        }
+        }*/
 
         ir_front.header.frame_id = "base_link";
         ir_front.radiation_type = 1;
@@ -263,13 +259,12 @@ public:
         int count = 0;
 
         // Send messages in a loop
-        ros::Rate loop_rate(10);
+        ros::Rate loop_rate(5);
 
         while (ros::ok())
         {
 
             // Calculate the command to apply
-            auto msg = calculateCommand();
             auto vel_MSG = cmdVelUpdate();
             auto rgb_MSG = setLEDs();
             auto pose_MSG = setPose();
