@@ -56,7 +56,7 @@ private:
     {
         auto msg = geometry_msgs::Twist();
 
-        float dt = 0.1;
+        float dt = 0.5;
 
 
         static float error;
@@ -92,7 +92,7 @@ private:
                             if(!front_ir_flag){
                                 msg.linear.x = 0.0;
                             }else if(front_obstacle_distance > front_obstacle_distance_threshold){
-                                msg.linear.x = desired_linear_velocity;
+                                msg.linear.x = 0.03;
                             } else {
                             	msg.linear.x = 0.0;
                                 init_flag = true;
@@ -149,7 +149,7 @@ private:
                             if(!front_ir_flag){
                                 msg.linear.x = 0.0;
                             }else if(front_obstacle_distance > front_obstacle_distance_threshold){
-                                msg.linear.x = desired_linear_velocity;
+                                msg.linear.x = 0.03;
                             } else {
                                 init_flag = true;
                                 msg.linear.x = 0.0;
