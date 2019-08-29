@@ -92,7 +92,7 @@ private:
                             if(!front_ir_flag){
                                 msg.linear.x = 0.0;
                             }else if(front_obstacle_distance > front_obstacle_distance_threshold){
-                                msg.linear.x = 0.03;
+                                msg.linear.x = desired_linear_velocity;
                             } else {
                             	msg.linear.x = 0.0;
                                 init_flag = true;
@@ -149,7 +149,7 @@ private:
                             if(!front_ir_flag){
                                 msg.linear.x = 0.0;
                             }else if(front_obstacle_distance > front_obstacle_distance_threshold){
-                                msg.linear.x = 0.03;
+                                msg.linear.x = desired_linear_velocity;
                             } else {
                                 init_flag = true;
                                 msg.linear.x = 0.0;
