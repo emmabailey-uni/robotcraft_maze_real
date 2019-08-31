@@ -2,7 +2,7 @@
 
 <launch>
 
-    <include file="$(find robotcraft_maze_real)/launch/gmapping.launch"/>
+    <!-- <include file="$(find robotcraft_maze_real)/launch/gmapping.launch"/> -->
     <include file="$(find ydlidar)/launch/lidar.launch"/>
     <include file="$(find robotcraft_maze_real)/launch/robot_firmware.launch"/>
 
@@ -18,7 +18,7 @@
 	<param name="front_obstacle_distance_threshold" type="double" value="0.20" />
 
 
-	<param name="k_p" type="double" value="2.0" />
+	<param name="k_p" type="double" value="1.5" />
 	<param name="k_i" type="double" value="0.0" />
 
     <param name="max_ang" type="double" value="0.5" />

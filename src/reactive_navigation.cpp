@@ -27,6 +27,7 @@ private:
 
     ros::NodeHandle n;
     ros::Publisher cmd_vel_pub;
+    ros::Publisher case_pub;
 
     ros::Subscriber ir_front_sensor;
     ros::Subscriber ir_left_sensor;
@@ -44,6 +45,7 @@ private:
     float desired_wall;
     float lost_distance;
     float max_ang;
+    float number;
 
     // Wall distance controller parameters
     int k_p;
@@ -56,7 +58,7 @@ private:
     {
         auto msg = geometry_msgs::Twist();
 
-        float dt = 0.5;
+        float dt = 0.1;
 
 
         static float error;
@@ -71,7 +73,7 @@ private:
         static bool init_flag = false;
         static int switch_case = 0;
         static int count = 0;
-
+        
 
         if(!init_flag){
         	// INIT
@@ -92,12 +94,13 @@ private:
                             if(!front_ir_flag){
                                 msg.linear.x = 0.0;
                             }else if(front_obstacle_distance > front_obstacle_distance_threshold){
-                                msg.linear.x = 0.03;
+                                msg.linear.x = desired_linear_velocity;
                             } else {
                             	msg.linear.x = 0.0;
                                 init_flag = true;
                             }
                             msg.angular.z = 0.0;
+                            number = 0;
                             break;       // and exits the switch
 
             case 1 :        // PI controller
@@ -127,6 +130,7 @@ private:
                             msg.linear.x = desired_linear_velocity;
 
                             ROS_INFO("Case PID");
+                            number = 1;
                             break;
 
             case 2 :        // Avoidance manuever
@@ -137,6 +141,7 @@ private:
                             integral_error = 0;
 
                             ROS_INFO("Case MANUEVER");
+                            number = 2;
                             break;
                             
             }
@@ -149,12 +154,14 @@ private:
                             if(!front_ir_flag){
                                 msg.linear.x = 0.0;
                             }else if(front_obstacle_distance > front_obstacle_distance_threshold){
-                                msg.linear.x = 0.03;
+                                msg.linear.x = desired_linear_velocity;
                             } else {
                                 init_flag = true;
                                 msg.linear.x = 0.0;
                             }
                             msg.angular.z = 0.0;
+
+                            number = 0;
                             break;       // and exits the switch
 
             case 1 :        // PI controller
@@ -182,6 +189,7 @@ private:
                             msg.linear.x = desired_linear_velocity;
 
                             ROS_INFO("Case PID");
+                            number = 1;
 
                             break;
 
@@ -193,6 +201,7 @@ private:
                             integral_error = 0;
 
                             ROS_INFO("Case MANUEVER");
+                            number = 2;
                             break;
             
         	}
@@ -224,6 +233,17 @@ private:
         front_ir_flag = true;
     }
 
+   std_msgs::Float32 CASE(){
+
+    // send switch_case to robot_driver.cpp
+    auto number_msg = std_msgs::Float32();
+    number_msg.data = number;
+
+
+
+    return number_msg;
+   }
+
 
 public:
     ReactiveController(){
@@ -231,13 +251,15 @@ public:
         this->n = ros::NodeHandle();
 
         // Create a publisher object, able to push messages
-        this->cmd_vel_pub = this->n.advertise<geometry_msgs::Twist>("reactive_vel", 10);
+        this->cmd_vel_pub = this->n.advertise<geometry_msgs::Twist>("reactive_vel", 2);
+        this->case_pub = this->n.advertise<std_msgs::Float32>("case_msg", 2);
+
 
 
         // name_of_the_subscriber = n.subscribe("topic_name")
-        this->ir_right_sensor = n.subscribe("ir_right_sensor", 10, &ReactiveController::ir_right_Callback, this);
-        this->ir_left_sensor = n.subscribe("ir_left_sensor", 10, &ReactiveController::ir_left_Callback, this);
-        this->ir_front_sensor = n.subscribe("ir_front_sensor", 10, &ReactiveController::ir_front_Callback, this);
+        this->ir_right_sensor = n.subscribe("ir_right_sensor", 2, &ReactiveController::ir_right_Callback, this);
+        this->ir_left_sensor = n.subscribe("ir_left_sensor", 2, &ReactiveController::ir_left_Callback, this);
+        this->ir_front_sensor = n.subscribe("ir_front_sensor", 2, &ReactiveController::ir_front_Callback, this);
 
 
         this->n.getParam("/desired_side_wall_distance", desired_side_wall_distance);
@@ -259,8 +281,10 @@ public:
         {
             if(front_ir_flag){
               auto msg = calculateCommand();
+              auto number_msg = CASE();
               // Publish the new command
               this->cmd_vel_pub.publish(msg);
+              this->case_pub.publish(number_msg);
 
             }
             ros::spinOnce();

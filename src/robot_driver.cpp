@@ -30,6 +30,7 @@
 #endif na
 
 
+
 class RobotDriver
 {
 private:
@@ -47,6 +48,7 @@ private:
     double v;
     double w;
     float initial_x, initial_y, initial_theta;
+    float number;
 
 
     //Publisher Topics
@@ -64,6 +66,7 @@ private:
     ros::Subscriber front_dist_sub;
     ros::Subscriber pose_sub;
     ros::Subscriber reactive_vel_sub;
+    ros::Subscriber case_sub;
 
     //Service client
     //ros::ServiceClient buzzer_client;
@@ -204,13 +207,31 @@ private:
         return pose_MSG;
     }
 
+     void caseCallback(const std_msgs::Float32& number_msg){
+    // callback to fill the ´number' variable with the message data
+    number=number_msg.data;
+   }
+
     std_msgs::UInt8MultiArray setLEDs(){
         auto rgb_MSG = std_msgs::UInt8MultiArray();
         // Set color of led lights, the first 3 enteries are for LED_1 [255,0,0] and the last 3 for LED_2 [0,255,0]
-        // THIS IS NOT SET UP CORRECTLY, FOLLOW THIS EXAMPKE: http://alexsleat.co.uk/2011/07/02/ros-publishing-and-subscribing-to-arrays/
-        //rgb_MSG.data = [255,0,0,0,255,0];
+        
+        if (number == 1){
+            rgb_MSG.data = {0,255,0,0,255,0};
+        }
+        else if (number == 2){
+            rgb_MSG.data = {0,0,255,0,0,255};
+        }
+        else{
+            rgb_MSG.data = {255,0,0,255,0,0};
+        }
+
+
+        
         return rgb_MSG;
     }
+
+
 
     /*void switchBuzzerState(std::string c){
         // Set led to "0" or "1" by char c
@@ -236,19 +257,22 @@ public:
         this->n.getParam("/initial_theta", initial_theta);
 
         // Create a publisher object, able to push messages
-        this->cmd_vel_pub = this->n.advertise<geometry_msgs::Twist>("cmd_vel", 10);
+        this->cmd_vel_pub = this->n.advertise<geometry_msgs::Twist>("cmd_vel", 2);
         this->odom_pub = this->n.advertise<nav_msgs::Odometry>("odom", 10);
-        this->set_pose_pub = this->n.advertise<geometry_msgs::Pose2D>("set_pose", 10);
-        this->ir_front_sensor = this->n.advertise<sensor_msgs::Range>("ir_front_sensor", 10);
-        this->ir_left_sensor = this->n.advertise<sensor_msgs::Range>("ir_left_sensor", 10);
-        this->ir_right_sensor = this->n.advertise<sensor_msgs::Range>("ir_right_sensor", 10);
+        this->set_pose_pub = this->n.advertise<geometry_msgs::Pose2D>("set_pose", 2);
+        this->ir_front_sensor = this->n.advertise<sensor_msgs::Range>("ir_front_sensor", 2);
+        this->ir_left_sensor = this->n.advertise<sensor_msgs::Range>("ir_left_sensor", 2);
+        this->ir_right_sensor = this->n.advertise<sensor_msgs::Range>("ir_right_sensor", 2);
+        this->rgb_leds_pub = this->n.advertise<std_msgs::UInt8MultiArray>("rgb_leds", 2);
 
         // Create a subscriber for laser scans
-        this->pose_sub = n.subscribe("pose", 10, &RobotDriver::poseCallback, this);
-        this->left_dist_sub = n.subscribe("left_distance", 10, &RobotDriver::leftCallback, this);
-        this->right_dist_sub = n.subscribe("right_distance", 10, &RobotDriver::rightCallback, this);
-        this->front_dist_sub = n.subscribe("front_distance", 10, &RobotDriver::frontCallback, this);
-        this->reactive_vel_sub = n.subscribe("reactive_vel", 10, &RobotDriver::reactiveVelCallback, this);
+        this->pose_sub = n.subscribe("pose", 2, &RobotDriver::poseCallback, this);
+        this->left_dist_sub = n.subscribe("left_distance", 2, &RobotDriver::leftCallback, this);
+        this->right_dist_sub = n.subscribe("right_distance", 2, &RobotDriver::rightCallback, this);
+        this->front_dist_sub = n.subscribe("front_distance", 2, &RobotDriver::frontCallback, this);
+        this->reactive_vel_sub = n.subscribe("reactive_vel", 2, &RobotDriver::reactiveVelCallback, this);
+        this->case_sub = n.subscribe("case_msg", 10, &RobotDriver::caseCallback, this);
+
 
 
     }
@@ -259,7 +283,7 @@ public:
         int count = 0;
 
         // Send messages in a loop
-        ros::Rate loop_rate(5);
+        ros::Rate loop_rate(2);
 
         while (ros::ok())
         {
@@ -272,7 +296,7 @@ public:
             //HAVENT CREATED THESE VARIABLES YET
             // Publish the new command
             this->cmd_vel_pub.publish(vel_MSG);
-            //this->rgb_leds_pub.publish(rgb_MSG);
+            this->rgb_leds_pub.publish(rgb_MSG);
             this->set_pose_pub.publish(pose_MSG);
 
 
